@@ -16,7 +16,19 @@ HEADERS = {
 }
 
 
-class AbstractScraper:
+class Downloader:
+    def get_or_download_raw_html(self, url, proxies, timeout, data):
+        if data:
+            self.page_data = data
+        else:    
+            self.page_data = requests.get(
+                url, headers=HEADERS, proxies=proxies, timeout=timeout
+            ).content
+
+
+class AbstractScraper(Downloader):
+
+    
     def __init__(
         self,
         url,
@@ -25,14 +37,13 @@ class AbstractScraper:
             Union[float, Tuple, None]
         ] = None,  # allows us to specify optional timeout for request
         wild_mode: Optional[bool] = False,
+        data: Optional[str] = None
     ):
         if settings.TEST_MODE:  # when testing, we load a file
             self.page_data = url.read()
             url = "https://test.example.com/"
         else:
-            self.page_data = requests.get(
-                url, headers=HEADERS, proxies=proxies, timeout=timeout
-            ).content
+            self.get_or_download_raw_html(url, proxies, timeout, data)
 
         self.wild_mode = wild_mode
         self.soup = BeautifulSoup(self.page_data, "html.parser")
@@ -134,13 +145,13 @@ class AbstractScraper:
 
     def author(self):
         raise NotImplementedError("This should be implemented.")
-
+    
     def cuisine(self):
         raise NotImplementedError("This should be implemented.")
 
     def description(self):
         raise NotImplementedError("This should be implemented.")
-
+    
     def reviews(self):
         raise NotImplementedError("This should be implemented.")
 
